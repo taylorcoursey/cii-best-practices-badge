@@ -1,5 +1,10 @@
 ENV['RAILS_ENV'] ||= 'test'
 
+if ENV['CI']
+  require 'minitest/retry'
+  Minitest::Retry.use!
+end
+
 require 'simplecov'
 SimpleCov.start 'rails' do
   add_group 'Validators', 'app/validators'
@@ -8,6 +13,7 @@ SimpleCov.start 'rails' do
   add_filter '/test/'
   add_filter '/vendor/'
 end
+
 require 'coveralls'
 SimpleCov.formatters = [SimpleCov::Formatter::HTMLFormatter,
                         Coveralls::SimpleCov::Formatter]
@@ -100,7 +106,33 @@ module ActiveSupport
       end
     end
 
+    def wait_for_jquery
+      Timeout.timeout(Capybara.default_max_wait_time) do
+        loop until finished_all_jquery_requests?
+      end
+    end
+
+    def kill_sticky_headers
+      # https://alisdair.mcdiarmid.org/kill-sticky-headers/
+      script = <<-EOS
+      (function () {
+        var i, elements = document.querySelectorAll('body *');
+
+        for (i = 0; i < elements.length; i++) {
+          if (getComputedStyle(elements[i]).position === 'fixed') {
+            elements[i].parentNode.removeChild(elements[i]);
+          }
+        }
+      })();
+      EOS
+      page.execute_script script
+    end
+
     private
+
+    def finished_all_jquery_requests?
+      page.evaluate_script('jQuery.active').zero?
+    end
 
     # Returns true inside an integration test.
     # Based on "Ruby on Rails Tutorial" by Michael Hargle, chapter 8,
