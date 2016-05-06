@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 class Project < ActiveRecord::Base
+  using StringRefinements
   using SymbolRefinements
 
+  BADGE_STATUSES = %w(in_progress passing failing).freeze
   STATUS_CHOICE = %w(? Met Unmet).freeze
   STATUS_CHOICE_NA = (STATUS_CHOICE + %w(N/A)).freeze
   MIN_SHOULD_LENGTH = 5
@@ -14,12 +16,25 @@ class Project < ActiveRecord::Base
   ALL_CRITERIA_JUSTIFICATION = Criteria.map { |c| c.name.justification }.freeze
   PROJECT_PERMITTED_FIELDS = (PROJECT_OTHER_FIELDS + ALL_CRITERIA_STATUS +
                               ALL_CRITERIA_JUSTIFICATION).freeze
-
   # A project is associated with a user
   belongs_to :user
   delegate :name, to: :user, prefix: true
 
   default_scope { order(:created_at) }
+  scope :failing, -> { where(badge_status: 'failing') }
+  scope :in_progress, -> { where(badge_status: 'in_progress') }
+  scope :passing, -> { where(badge_status: 'passing') }
+
+  scope :text_search, (
+    lambda do |text|
+      start_text = "#{text}%"
+      where(
+        Project.arel_table[:name].matches(start_text).or(
+          Project.arel_table[:homepage_url].matches(start_text)).or(
+            Project.arel_table[:repo_url].matches(start_text))
+      )
+    end
+  )
 
   # Record information about a project.
   # We'll also record previous versions of information:
@@ -49,6 +64,8 @@ class Project < ActiveRecord::Base
 
   validates :user_id, presence: true
 
+  before_save :update_badge_status
+
   # Validate all of the criteria-related inputs
   Criteria.each do |criterion|
     if criterion.na_allowed?
@@ -57,6 +74,10 @@ class Project < ActiveRecord::Base
       validates criterion.name.status, inclusion: { in: STATUS_CHOICE }
     end
     validates criterion.name.justification, length: { maximum: MAX_TEXT_LENGTH }
+  end
+
+  def update_badge_status
+    self.badge_status = badge_level
   end
 
   def badge_level
@@ -82,7 +103,7 @@ class Project < ActiveRecord::Base
 
   def any_status_in_progress?
     Criteria.active.any? do |criterion|
-      self[criterion.name.status] == '?' || self[criterion.name.status].blank?
+      self[criterion.name.status].unknown? || self[criterion.name.status].blank?
     end
   end
 
@@ -92,23 +113,21 @@ class Project < ActiveRecord::Base
   end
 
   # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
-  # rubocop:disable Metrics/MethodLength, Metrics/PerceivedComplexity
+  # rubocop:disable Metrics/PerceivedComplexity
   def passing?(criterion)
     status = self[criterion.name.status]
     justification = self[criterion.name.justification]
-    category = criterion.category
-    met_needs_url = criterion.met_url_required?
 
-    return true if status == 'N/A'
-    return true if status == 'Met' && !met_needs_url
-    return true if status == 'Met' && contains_url?(justification)
-    return true if category == 'SHOULD' && status == 'Unmet' &&
+    return true if status.na?
+    return true if status.met? && !criterion.met_url_required?
+    return true if status.met? && contains_url?(justification)
+    return true if criterion.should? && status.unmet? &&
                    justification.length >= MIN_SHOULD_LENGTH
-    return true if category == 'SUGGESTED' && status != '?'
+    return true if criterion.suggested? && !status.unknown?
     false
   end
   # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity
-  # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity
+  # rubocop:enable Metrics/PerceivedComplexity
 
   def to_percentage(portion, total)
     return 0 if portion.zero?

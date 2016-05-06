@@ -64,13 +64,30 @@ end
 
 desc 'Run bundle-audit - check for known vulnerabilities in dependencies'
 task :bundle_audit do
-  verbose(false) do
+  verbose(true) do
     sh <<-END
-      if ping -q -c 1 google.com > /dev/null 2> /dev/null ; then
-        bundle exec bundle-audit update && bundle exec bundle-audit check
+      apply_bundle_audit=t
+      if ping -q -c 1 github.com > /dev/null 2> /dev/null ; then
+        echo "Have network access, trying to update bundle-audit database."
+        tries_left=10
+        while [ "$tries_left" -gt 0 ] ; do
+          if bundle exec bundle-audit update ; then
+            echo 'Successful bundle-audit update.'
+            break
+          fi
+          sleep 2
+          tries_left=$((tries_left - 1))
+          echo "Bundle-audit update failed. Number of tries left=$tries_left"
+        done
+        if [ "$tries_left" -eq 0 ] ; then
+          echo "Bundle-audit update failed after multiple attempts. Skipping."
+          apply_bundle_audit=f
+        fi
       else
-        echo 'Cannot access rubygems.org, so skipping bundle_audit check'
-        true # If we can't access google, don't bother.
+        echo "Cannot update bundle-audit database; using current data."
+      fi
+      if [ "$apply_bundle_audit" = 't' ] ; then
+        bundle exec bundle-audit check
       fi
     END
   end
@@ -193,19 +210,48 @@ namespace :fastly do
   end
 end
 
+desc 'Drop development database'
+task :drop_database do
+  puts 'Dropping database development'
+  # Command from http://stackoverflow.com/a/13245265/1935918
+  sh "echo 'SELECT pg_terminate_backend(pg_stat_activity.pid) FROM " \
+     'pg_stat_activity WHERE datname = current_database() AND ' \
+     "pg_stat_activity.pid <> pg_backend_pid();' | psql development; " \
+     'dropdb -e development'
+end
+
 desc 'Copy database from production into development (requires access privs)'
-task :pull_database do
-  puts 'Getting database'
-  # This fails, probably because we use Unix sockets with local db:
-  # sh 'rake db:drop &&
-  #     heroku pg:pull DATABASE_URL development --app production-bestpractices'
-  sh 'heroku pg:backups capture --app production-bestpractices && \
-      curl -o db/latest.dump `heroku pg:backups public-url \
-        --app production-bestpractices` && \
-      rake db:reset && \
-      pg_restore --verbose --clean --no-acl --no-owner -U `whoami` \
-        -d development db/latest.dump'
-  puts 'You may need to run "rake db:migrate".'
+task :pull_production do
+  puts 'Getting production database'
+  Rake::Task['drop_database'].reenable
+  Rake::Task['drop_database'].invoke
+  sh 'heroku pg:pull DATABASE_URL development --app production-bestpractices'
+  Rake::Task['db:migrate'].reenable
+  Rake::Task['db:migrate'].invoke
+end
+
+desc 'Copy database from master into development (requires access privs)'
+task :pull_master do
+  puts 'Getting master database'
+  Rake::Task['drop_database'].reenable
+  Rake::Task['drop_database'].invoke
+  sh 'heroku pg:pull DATABASE_URL development --app master-bestpractices'
+  Rake::Task['db:migrate'].reenable
+  Rake::Task['db:migrate'].invoke
+end
+
+desc 'Copy production database to master, overwriting master database'
+task :production_to_master do
+  sh 'heroku pg:backups restore $(heroku pg:backups public-url ' \
+     '--app production-bestpractices) DATABASE_URL --app master-bestpractices'
+  sh 'heroku run bundle exec rake db:migrate --app master-bestpractices'
+end
+
+desc 'Copy production database to staging, overwriting staging database'
+task :production_to_staging do
+  sh 'heroku pg:backups restore $(heroku pg:backups public-url ' \
+     '--app production-bestpractices) DATABASE_URL --app staging-bestpractices'
+  sh 'heroku run bundle exec rake db:migrate --app staging-bestpractices'
 end
 
 Rails::TestTask.new('test:features' => 'test:prepare') do |t|
