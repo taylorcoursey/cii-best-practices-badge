@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 source 'https://rubygems.org'
 ruby File.open('.ruby-version', 'rb') { |f| f.read.chomp }
 
@@ -8,8 +9,8 @@ gem 'bootstrap-social-rails', '4.12.0'
 gem 'bootstrap-will_paginate', '0.0.10'
 gem 'bootstrap_form', '2.3.0'
 gem 'faker', '1.6.3'
-gem 'fastly-rails', '0.5.0' # Use Fastly CDN
-gem 'font-awesome-rails', '4.6.1.0'
+gem 'fastly-rails', '0.6.0' # Use Fastly CDN
+gem 'font-awesome-rails', '4.6.2.0'
 gem 'github_api', '0.13.1'
 gem 'imagesLoaded_rails', '4.1.0' # Javascript - enable wait for image load
 gem 'jbuilder', '2.4.1'
@@ -24,7 +25,8 @@ gem 'puma', '3.4.0' # Faster webserver; recommended by Heroku
 gem 'rack-timeout', '0.4.2' # Timeout per https://github.com/heroku/rack-timeout
 gem 'rails', '4.2.6' # Our web framework
 gem 'sass-rails', '5.0.4'
-gem 'secure_headers', '3.3.0' # Harden app security using HTTP headers
+gem 'secure_headers', git: 'https://github.com/dankohn/secureheaders',
+                      ref: '96287e2'
 gem 'turbolinks', '2.5.3' # Speed UI access
 gem 'jquery-turbolinks'   # Make turbolinks work with jQuery
 gem 'uglifier', '3.0.0'
@@ -59,15 +61,16 @@ group :development do
 end
 
 group :test do
+  gem 'capybara-slow_finder_errors', '0.1.4' # warn if test waits for timeout
   gem 'chromedriver-helper', '1.0.0'
-  gem 'coveralls', '0.8.13', require: false
-  gem 'm', '1.4.2' # Run test/unit tests by line number
-  gem 'minitest-rails-capybara', '2.1.1', require: false
+  gem 'codecov', '0.1.4', require: false
+  gem 'm', '1.5.0' # Run test/unit tests by line number
+  gem 'minitest-rails-capybara', '2.1.2', require: false
   gem 'minitest-retry', '0.1.4', require: false # Avoid Capybara false positives
   gem 'poltergeist', '1.9.0', require: false
   gem 'selenium-webdriver', '2.53.0', require: false
   gem 'simplecov', '0.11.2', require: false
-  gem 'webmock', '2.0.1', require: false
+  gem 'webmock', '2.0.2', require: false
 end
 
 group :production do

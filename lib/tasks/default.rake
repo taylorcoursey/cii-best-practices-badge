@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # Rake tasks for BadgeApp
 
 # Run tests last. That way, runtime problems (e.g., undone migrations)
@@ -88,6 +89,8 @@ task :bundle_audit do
       fi
       if [ "$apply_bundle_audit" = 't' ] ; then
         bundle exec bundle-audit check
+      else
+        true
       fi
     END
   end

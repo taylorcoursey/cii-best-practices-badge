@@ -2,7 +2,7 @@
 
 ## Workflow
 
-Please review documentation on [testing](http://guides.rubyonrails.org/testing.html). Pull requests should endeavor to increase, not decrease test coverage, as monitored in [Coveralls](https://coveralls.io/github/linuxfoundation/cii-best-practices-badge).
+Please review documentation on [testing](http://guides.rubyonrails.org/testing.html). Pull requests should endeavor to increase, not decrease test coverage, as monitored in [Codecov](https://codecov.io/gh/linuxfoundation/cii-best-practices-badge).
 
 Running `m test/features/can_access_home_test.rb:4` will execute just the test from line 4. Removing the `:4` will run all tests in that file.
 
@@ -21,6 +21,23 @@ DRIVER=poltergeist m test/features/can_access_home_test.rb
 Selenium tests for Safari require this [file](http://selenium-release.storage.googleapis.com/2.48/SafariDriver.safariextz) but still do not seem to be working currently.
 
 Write Capybara features to test the happy path of new features. Test the feature both with the default rack-test (or poltergeist, for tests requiring Javascript) and with Selenium `DRIVER=chrome rake test`.
+
+## External API testing
+
+We use Webmock and VCR to record external API responses and test against them without needing to make actual HTTP requests. If the external services (particularly Github) change their API, you need to delete the corresponding VCR cassette and rerun the test to re-record. This would involve (substituting the actual password for the Github account `ciitest`):
+
+```bash
+rm test/vcr_cassettes/github_login.yml
+GITHUB_PASSWORD=real_password m test/features/github_login_test.rb
+```
+
+After completing the VCR recording, `github_login_test.rb` revokes the authorization of the oauth app so that Github doesn't complain about committing a live token to the repo. To manually walk through the login process with Github OAuth authentication, you can run the rails server with
+
+```bash
+RAILS_ENV=test rails s -p 31337 -b 0.0.0.0
+```
+
+and then go to http://127.0.0.1:31337 in your web browser.
 
 ## Troubleshooting
 

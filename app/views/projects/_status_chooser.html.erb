@@ -75,7 +75,7 @@
          <% if (is_disabled) %>
            <% if project[justification_symbol] %>
              <div class="justification-markdown">
-               <%= ApplicationHelper.markdown(project[justification_symbol]) %>
+               <%= markdown(project[justification_symbol]) %>
              </div>
            <% end %>
            <% if project[status_symbol] == 'Met' &&
@@ -91,5 +91,10 @@
          <% else %>
            <%= f.text_area justification_symbol, class:"form-control", hide_label: true, placeholder:'Please explain', disabled: is_disabled  %>
          <% end %>
+      <% if is_last %>
+        <br>
+      <% else %>
+        <hr>
+      <% end %>
       </div>
     </div>

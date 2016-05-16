@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 Rails.application.routes.draw do
   get 'sessions/new'
 
@@ -5,6 +6,8 @@ Rails.application.routes.draw do
   get 'home' => 'static_pages#home'
   get 'background' => 'static_pages#background'
   get 'criteria' => 'static_pages#criteria'
+
+  get 'feed' => 'projects#feed', defaults: { format: 'atom' }
 
   resources :projects do
     member do
@@ -14,14 +17,14 @@ Rails.application.routes.draw do
 
   resources :users
   resources :account_activations, only: [:edit]
-  resources :password_resets,     only: [:new, :create, :edit, :update]
+  resources :password_resets,     only: %i(new create edit update)
 
   get 'login' => 'sessions#new'
   post 'login' => 'sessions#create'
   delete 'logout' => 'sessions#destroy'
 
   get 'auth/:provider/callback' => 'sessions#create'
-  get '/signout' => 'sessions#destroy', :as => :signout
+  get '/signout' => 'sessions#destroy', as: :signout
 
   # The priority is based upon order of creation: first created ->
   # highest priority.
