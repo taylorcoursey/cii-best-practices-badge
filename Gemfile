@@ -7,9 +7,7 @@ gem 'bcrypt', '3.1.11' # Security - for salted hashed interated passwords
 gem 'bootstrap-sass', '3.3.6'
 gem 'bootstrap-social-rails', '4.12.0'
 gem 'bootstrap-will_paginate', '0.0.10'
-# Avoids Rails 5 alias_method errors. https://github.com/bootstrap-ruby/rails-bootstrap-forms/pull/261
-gem 'bootstrap_form', git: 'https://github.com/narugami/rails-bootstrap-forms',
-                      ref: '0d8607f'
+gem 'bootstrap_form', '2.3.0'
 gem 'faker', '1.6.3'
 gem 'fastly-rails', '0.6.0' # Use Fastly CDN
 gem 'font-awesome-rails', '4.6.3.0'
@@ -17,7 +15,6 @@ gem 'github_api', '0.13.1'
 gem 'imagesLoaded_rails', '4.1.0' # Javascript - enable wait for image load
 gem 'jbuilder', '2.4.1'
 gem 'jquery-rails', '4.1.1' # Javascript jQuery library (for Rails)
-gem 'jquery-turbolinks', '2.1.0' # Make turbolinks work with jQuery
 gem 'jquery-ui-rails', '5.0.5' # Javascript jQueryUI library (for Rails)
 gem 'redcarpet', '3.3.4' # Process markdown in form textareas (justifications)
 gem 'octokit', '4.3.0' # GitHub's official Ruby API
@@ -26,17 +23,17 @@ gem 'paper_trail', '5.0.1' # Record previous versions of project data
 gem 'pg', '0.18.4' # PostgreSQL database, used for data storage
 gem 'puma', '3.4.0' # Faster webserver; recommended by Heroku
 gem 'rack-timeout', '0.4.2' # Timeout per https://github.com/heroku/rack-timeout
-gem 'rails', '5.0.0.rc1' # Our web framework
+gem 'rails', '4.2.6' # Our web framework
 gem 'sass-rails', '5.0.4'
 gem 'secure_headers', git: 'https://github.com/dankohn/secureheaders',
                       ref: '96287e2'
-gem 'turbolinks', '5.0.0.beta2' # Speed UI access
+gem 'turbolinks', '2.5.3' # Speed UI access
+gem 'jquery-turbolinks'   # Make turbolinks work with jQuery
 gem 'uglifier', '3.0.0'
 gem 'will_paginate', '3.1.0'
 
 group :development, :test do
   gem 'awesome_print', '1.6.1'
-  # Waiting for https://github.com/flyerhzm/bullet/issues/286 to resolve errors
   gem 'bullet', '5.0.0'
   gem 'bundler-audit', '0.5.0'
   gem 'ruby-graphviz', '1.2.2'
@@ -50,9 +47,7 @@ group :development, :test do
   gem 'pronto-rails_best_practices', '0.6.0'
   gem 'pronto-rubocop', '0.6.2'
   gem 'pry-byebug', '3.4.0'
-  # Avoids Rails 5 alias_method errors. https://github.com/evrone/quiet_assets/pull/43
-  gem 'quiet_assets', git: 'https://github.com/rossbeale/quiet_assets',
-                      ref: 'c9df6e8'
+  gem 'quiet_assets', '1.1.0'
   gem 'spring', '1.7.1'
   gem 'vcr', '3.0.1' # Record network responses for later test reuse
   gem 'yaml-lint', '0.0.7' # Check YAML file syntax
@@ -69,10 +64,10 @@ group :test do
   gem 'capybara-slow_finder_errors', '0.1.4' # warn if test waits for timeout
   gem 'chromedriver-helper', '1.0.0'
   gem 'codecov', '0.1.4', require: false
-  gem 'minitest-rails-capybara', '3.0.0.rc1', require: false
+  gem 'm', '1.5.0' # Run test/unit tests by line number
+  gem 'minitest-rails-capybara', '2.1.2', require: false
   gem 'minitest-retry', '0.1.4', require: false # Avoid Capybara false positives
   gem 'poltergeist', '1.9.0', require: false
-  gem 'rails-controller-testing', '0.1.0' # Removed from Rails 5
   gem 'selenium-webdriver', '2.53.0', require: false
   gem 'simplecov', '0.11.2', require: false
   gem 'webmock', '2.0.2', require: false
