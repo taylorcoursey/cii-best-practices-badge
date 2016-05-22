@@ -87,7 +87,16 @@ module ActiveSupport
     # order.
     ActiveRecord::Migration.maintain_test_schema!
     self.use_transactional_fixtures = true
+
     fixtures :all
+
+    def setup
+      p "#{Project.count}: #{method_name}"
+      return if Project.count == 4
+      p Project.pluck :name
+      Project.where(name: 'Core Infrastructure Initiative Best Practices Badge')
+             .destroy_all
+    end
 
     # Add more helper methods to be used by all tests here...
 
