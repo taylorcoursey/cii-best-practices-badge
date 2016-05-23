@@ -91,11 +91,11 @@ module ActiveSupport
     fixtures :all
 
     def setup
-      p "#{Project.count}: #{method_name}"
-      return if Project.count == 4
-      p Project.pluck :name
-      Project.where(name: 'Core Infrastructure Initiative Best Practices Badge')
-             .destroy_all
+      # p "#{Project.count}: #{method_name}"
+      # return if Project.count == 4
+      # p Project.pluck :name
+      # Project.where(name: 'Core Infrastructure Initiative Best Practices Badge')
+      #        .destroy_all
     end
 
     # Add more helper methods to be used by all tests here...

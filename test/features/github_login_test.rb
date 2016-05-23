@@ -2,7 +2,8 @@
 require 'test_helper'
 
 class GithubLoginTest < Capybara::Rails::TestCase
-  scenario 'Has link to GitHub Login', js: true do
+  scenario 'Complete GitHub Login', js: true do
+    p Project.count
     configure_omniauth_mock unless ENV['GITHUB_PASSWORD']
 
     VCR.use_cassette('github_login') do
@@ -38,7 +39,7 @@ class GithubLoginTest < Capybara::Rails::TestCase
       click_on 'Account'
       assert has_content? 'Profile'
       click_on 'Profile'
-      assert has_content? 'CII Test'
+      assert has_content? 'Core Infrastructure Initiative Best Practices Badge'
 
       if ENV['GITHUB_PASSWORD'] # revoke OAuth authorization
         visit 'https://github.com/settings/applications'
@@ -49,6 +50,13 @@ class GithubLoginTest < Capybara::Rails::TestCase
         page.evaluate_script 'window.location.reload()'
         assert has_content? 'No authorized applications'
       end
+      p Project.count
     end
+  end
+
+  scenario 'Copyright notice' do
+    p Project.count
+    visit root_path
+    assert has_content? 'All Rights Reserved'
   end
 end
