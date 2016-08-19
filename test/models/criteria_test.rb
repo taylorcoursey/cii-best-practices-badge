@@ -24,6 +24,7 @@ class CriteriaTest < ActiveSupport::TestCase
       category future na_allowed met_url_required description details
       met_placeholder unmet_placeholder na_placeholder met_suppress
       unmet_suppress autofill
+      major minor
     )
     Criteria.to_h.each do |_criterion, values|
       values.each do |key, _value|
@@ -52,5 +53,13 @@ class CriteriaTest < ActiveSupport::TestCase
     Criteria.to_h.each do |_criterion, values|
       assert_not values[:met_url_required] && values[:met_suppress]
     end
+  end
+
+  # The "badge_percentage" and related values are currently integers 0..100;
+  # that won't work well if we have > 100 criteria.
+  # We can change the code later to address this; for now, let's make sure
+  # the software stays within the limitation
+  test 'No more than 100 criteria' do
+    assert Criteria.keys.length <= 100
   end
 end
