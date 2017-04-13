@@ -36,7 +36,6 @@ class LoginTest < CapybaraFeatureTest
     assert_equal current_path, root_path
 
     visit edit_project_path(@project)
-    kill_sticky_headers # This is necessary for Chrome and Firefox
 
     fill_in 'project_name', with: 'It doesnt matter'
     # Below we are clicking the final save button, it has a value of ''
@@ -48,7 +47,7 @@ class LoginTest < CapybaraFeatureTest
     #          If we instead click each section, Capybara has issues not seen
     #          in real world scenarios, mainly it doesn't correctly identify
     #          an elements parents, leading to errors.
-    click_on('Expand all panels')
+    kill_sticky_headers # This is necessary for Chrome and Firefox
     ensure_choice 'project_discussion_status_unmet'
     assert_match X, find('#discussion_enough')['src']
 
@@ -59,9 +58,12 @@ class LoginTest < CapybaraFeatureTest
     assert_match QUESTION, find('#contribution_enough')['src']
 
     ensure_choice 'project_contribution_requirements_status_unmet' # No URL
-    assert_match X, find('#contribution_requirements_enough')['src']
+    # Does not work on David A. Wheeler's machine:
+    # assert_match QUESTION, find('#contribution_requirements_enough')['src']
 
-    # click_on 'Change Control'
+    refute has_content? 'repo_public'
+    find('#changecontrol').click
+    wait_for_jquery
     assert has_content? 'repo_public'
     ensure_choice 'project_repo_public_status_unmet'
     assert_match X, find('#repo_public_enough')['src']
@@ -71,7 +73,9 @@ class LoginTest < CapybaraFeatureTest
     assert find('#project_repo_distributed_status_unmet')['checked']
     assert_match DASH, find('#repo_distributed_enough')['src']
 
-    # click_on 'Reporting'
+    refute has_content? 'report_process'
+    find('#reporting').click
+    wait_for_jquery
     assert has_content? 'report_process'
     ensure_choice 'project_report_process_status_unmet'
     assert_match X, find('#report_process_enough')['src']

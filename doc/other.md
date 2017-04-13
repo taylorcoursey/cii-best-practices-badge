@@ -185,19 +185,16 @@ Upgrade some "passing" level SHOULD and SUGGESTED:
     proprietary (and some developers will therefore not use it).
 
 *   Upgrade dynamic_analysis_unsafe from SUGGESTED to MUST.
-    "<i>If</i> the software is application-level software
+    "<i>If</i> the project results include software
     written using a memory-unsafe language (e.g., C or C++),
     <i>then</i> the project MUST use
     at least one dynamic tool (e.g., a fuzzer or web application scanner)
-    routinely along with a mechanism to detect
-    memory safety problems such as buffer overwrites."
+    routinely in combination with a mechanism to detect
+    memory safety problems such as buffer overwrites.
+    If the project results do not include software written
+    in a memory-unsafe language, choose "not applicable" (N/A).
 
-    This reorders the "passing" level text, which reads as follows:
-    "It is SUGGESTED that if the software is application-level software
-    written using a memory-unsafe language (e.g., C or C++) then at
-    least one dynamic tool (e.g., a fuzzer or web application scanner)
-    be routinely used with a mechanism to detect memory safety problems
-    such as buffer overwrites.
+    This reorders the "passing" level text.
 
     *NOTE*:
     This would mean that C/C++ would be required to use something like
@@ -259,6 +256,10 @@ as described below.
     having CAA increases the risk that potential contributors
     will not contribute, especially if the receiver is
     a for-profit organization.
+    The
+    [Apache Software Foundation CLAs (the individual contributor license and the corporate CLA)](https://www.apache.org/licenses/)
+    are examples of CLAs, for projects which determine that the risks
+    of these kinds of CLAs to the project are less than their benefits.
 
 *   <a name="code_of_conduct"></a>The project MUST adopt a code of conduct and
     post it in a standard location.
@@ -289,6 +290,9 @@ as described below.
     There are various governance models, including benevolent dictator
     and formal meritocracy; for more details, see
     <a href="http://oss-watch.ac.uk/resources/governancemodels">Governance models</a>.
+    Both centralized (e.g., single-maintainer) and decentralized
+    (e.g., group maintainers) approaches have been successfully used
+    in projects.
     The governance information does not need to document the possibility
     of creating a project fork, since that is always possible
     for FLOSS projects.
@@ -303,6 +307,26 @@ as described below.
     This was inspired by the
     <a href="https://projects.ow2.org/bin/view/ow2/OMM">OW2 Open-source Maturity Model</a>,
     in particular RDMP-1 and STK-1.
+
+*   <a name="roles_responsibilities"></a>
+    The project MUST clearly define and publicly document the key roles in the
+    project and their responsibilities, including any tasks those roles
+    must perform.  It MUST be clear who has which role(s), though this
+    might not be documented in the same way.
+    <sup>[<a href="#roles_responsibilities">roles_responsibilities</a>]</sup>
+
+    *Details*: The documentation for
+    <a href="#governance">governance</a> and roles and responsibilities
+    may be in one place.
+
+    Rationale: Much knowledge about the project roles builds up
+    over the years, and is not sufficiently passed down to new people.
+    Documenting the roles can help recruit, train, and mentor new
+    project members.  Projects may choose document the roles
+    and responsibilities in one place, and identify who has the roles
+    separately, so that the project doesn't need to update the role
+    information when people change roles.
+    The goal is to make underlying assumptions clear.
 
 *   <a name="documentation_design"></a>The project MUST include documentation of
     its high-level design (aka architecture), that is, documentation that
@@ -334,21 +358,50 @@ as described below.
     the key properties of these components and relationships.
     <sup>[<a href="#documentation_architecture">documentation_architecture</a>]</sup>
 
+*   <a name="documentation_quick_start"></a>
+    The project MUST provide a "quick start" guide for new users
+    to help them quickly do something with the software.
+    <sup>[<a href="#documentation_quick_start">documentation_quick_start</a>]</sup>
+
+    *Details*:
+    The idea is to show users how to get started and make the software do
+    anything at all. This is critically important for potential users to
+    get started.
+
+    *Rationale*:
+    This is based on a conversation with Mike Milinkovich,
+    Executive Director of the Eclipse Foundation, about the OSS project
+    criteria and "what is important".
+    He believes, based on his long experience, that it is critically
+    important that any project have some sort of "quick start" guide to
+    help someone get started and do something with the software;
+    this feeling of accomplishment and demonstration that it works
+    builds understanding and confidence in the user.
+    https://github.com/linuxfoundation/cii-best-practices-badge/issues/645
+
 *   <a name="documentation_current"></a>
     The project MUST make an effort to
     keep the documentation consistent with the current version of the
     program and any known documentation defects making it inconsistent
-    MUST be fixed. Documentation of other versions may be included.
+    MUST be fixed.
+    If the documentation is generally current, but erroneously
+    includes some older information that is no longer true,
+    just treat that as a defect, then track and fix as usual.
     <sup>[<a href="#documentation_current">documentation_current</a>]</sup>
 
-    *Details*: If the documentation is generally current, but erroneously
-    includes some older information, just treat that as a defect, then
-    track and fix as usual.  The intent of this criterion is that the
-    documentation is kept consistent, not that the documentation
+    *Details*:
+    The documentation MAY include information about differences or changes
+    between versions of the software and/or link to older versions of
+    the documentation.
+    The intent of this criterion is that an effort is made to keep
+    the documentation consistent, not that the documentation
     must be perfect.
 
     *Rationale*: It's difficult to keep documentation up-to-date, so the
     criterion is worded this way to make it more practical.
+    Information on differences or changes between versions of the
+    software helps users of older versions
+    and users who are transitioning from older versions.
 
 *   <a name="documentation_achievements"></a>
     The project repository front page and/or website MUST
@@ -708,6 +761,14 @@ as described below.
     accepting a dependency on those projects - and
     LZ4 in the Linux kernel.
 
+*   <a name="interfaces_current"></a>
+    The project SHOULD avoid using deprecated or obsolete functions
+    and APIs where FLOSS alternatives are available in the set of
+    technology it uses (its "technology stack") and to a supermajority
+    of the users the project supports (so that users have ready access
+    to the alternative).
+    <sup>[<a href="#interfaces_current">interfaces_current</a>]</sup>
+
 #### Build
 
 *   <a name="build_standard_variables"></a>
@@ -910,13 +971,13 @@ as described below.
 
 #### Cryptography
 
-*   <a name="crypto_agility"></a>
+*   <a name="crypto_algorithm_agility"></a>
     The project SHOULD support multiple
     cryptographic algorithms, so users can quickly switch if one is broken.
     Common symmetric key algorithms include AES, Twofish, and Serpent.
     Common cryptographic hash algorithm alternatives include SHA-2
     (including SHA-224, SHA-256, SHA-384 AND SHA-512) and SHA-3.
-    <sup>[<a href="#crypto_agility">crypto_agility</a>]</sup>
+    <sup>[<a href="#crypto_algorithm_agility">crypto_algorithm_agility</a>]</sup>
 
     *Rationale*:
     The advantage of crypto agility is that if one crypto algorithm is
@@ -931,11 +992,22 @@ as described below.
     See the discussion at
     <a href="https://github.com/linuxfoundation/cii-best-practices-badge/issues/215">Remove requirement for supporting alternative crypto algorithms (crypto_alternatives)?</a>
 
-*   <a name="crypto_used_network"></a>(Future) The project
-    SHOULD NOT use unencrypted network communication protocols (such as HTTP
-    and telnet) if there is an encrypted equivalent (e.g., HTTPS/TLS and SSH),
-    unless the user specifically requests or configures it.
+*   <a name="crypto_credential_agility"></a>
+    The project MUST support storing authentication credentials (such as
+    passwords and dynamic tokens) and private cryptographic keys in files
+    that are separate from other information (such as configuration files,
+    databases, and logs), and permit users to update and replacement
+    them without code recompilation. This is N/A if the project never
+    processes authentication credentials and private cryptographic keys.
     (N/A allowed).
+    <sup>[<a href="#crypto_credential_agility">crypto_credential_agility</a>]</sup>
+
+*   <a name="crypto_used_network"></a>(Future, tweaked) The project
+    SHOULD support secure protocols for all of its network
+    communications, such as SSHv2 or later, TLS1.2 or later (HTTPS),
+    IPsec, SFTP, and SNMPv3. Insecure protocols such as FTP, HTTP, telnet,
+    SSLv3 or earlier, and SSHv1 SHOULD be disabled by default,
+    and only enabled if the user specifically configures it.  (N/A allowed).
     <sup>[<a href="#crypto_used_network">crypto_used_network</a>]</sup>
 
 *   <a name="crypto_tls12"></a>(Future)
@@ -966,16 +1038,25 @@ as described below.
 #### Secure Release
 
 *   <a name="signed_releases"></a>
-    Project releases of the software intended for widespread use
-    MUST be cryptographically signed, there MUST be a documented
+    The project MUST cryptographically sign
+    releases of the project results intended for widespread use, and
+    there MUST be a documented
     process explaining to users how they can obtain the public signing keys
-    and verify the signature. The private key for this signature MUST NOT
+    and verify the signature(s).
+    The private key for these signature(s) MUST NOT
     be on site(s) used to directly distribute the software to the public.
-    This includes both source code and executables (where applicable).
-    Executables MAY be signed separately from source code.
-    These may be implemented as signed git tags
-    (using cryptographic digital signatures).
     <sup>[<a href="#signed_releases">signed_releases</a>]</sup>
+
+    *Details*:
+    The project results include both source code and any
+    generated deliverables where applicable (e.g., executables,
+    packages, and containers).
+    Generated deliverables MAY be signed separately from source code.
+    These MAY be implemented as signed git tags
+    (using cryptographic digital signatures).
+    Projects MAY provide generated results separately
+    from tools like git, but in those cases, the separate results
+    MUST be separately signed.
 
     *Rationale*:
     This provides protection from compromised distribution systems.
@@ -989,6 +1070,21 @@ as described below.
     Node.js implements this via GPG keys in the README, but note that
     in the criterion we are intentionally more general:
     <a href="https://github.com/nodejs/node#release-team">Node.js Release Team</a>
+
+*   <a name="version_tags_signed"></a>
+    It is SUGGESTED that in the version control system,
+    each important version tag (a tag that is part of a major
+    release, minor release, or fixes publicly noted vulnerabilities)
+    be cryptographically signed and verifiable as described in
+    <a href="#signed_releases">signed_releases</a>.
+    <sup>[<a href="#version_tags_signed">version_tags_signed</a>]</sup>
+
+    *Details*: See also
+    <a href="#signed_releases">signed_releases</a> and
+    <a href="#version_tags">version_tags</a>.
+
+    *Rationale*: This was suggested by Kevin W. Wall (@kwwall)
+    in issue #709.
 
 ### Analysis
 
@@ -1185,20 +1281,63 @@ as described below.
 
 ### Basics
 
+*   <a name="copyright_per_file"></a>
+    The project MUST include a copyright statement in each source file,
+    identifying at least one relevant year and copyright holder.
+    <sup>[<a href="#copyright_per_file"> copyright_per_file </a>]</sup>
+
+    *Details*:
+    This MAY be done by including the following inside a comment
+    near the beginning of each file:
+    "<tt>Copyright [year this project or content started] -
+    [most recent year modified],
+    [project founder] and the [project name] contributors.</tt>"
+
+    *Rationale*: This isn't legally required in most jurisdictions, per the
+    Berne Convention.  For example, copyright notices have not been required
+    in the US since 1979.
+    On the other hand, this is not hard to add.
+    <a href="http://ben.balter.com/2015/06/03/copyright-notices-for-websites-and-open-source-projects/">Ben Balter's "Copyright notices for open source projects"</a>
+    provides some good arguments for why it *should* be included:
+    "First, someone may want to use your work in ways not allowed
+    by your license; notices help them determine who to ask for
+    permission. Explicit notices can help you prove that you and your
+    collaborators really are the copyright holders. They can serve to put
+    a potential infringer on notice by providing an informal sniff test to
+    counter the “Oh yeah, well I didn’t know it was copyrighted”
+    defense. For some users the copyright notice may suggest higher
+    quality, as they expect that good software will include a notice...
+    Git can track these things, but people may receive software outside
+    of git or where the git history has not been retained."
+    In addition, we have been informed by the Linux Foundation's SPDX
+    community that having this information is extremely valuable for
+    relicensing and for checking to determine if a copyrighted work is
+    derived from another.  While version control systems do track versioning
+    within a project, when files are copied between projects this information
+    is often lost.  Having the copyright notice information helps
+    those researching sources, e.g., if they wish to try
+    to relicense something.
+
 *   <a name="license_per_file"></a>
     The project MUST include a license statement in each source file.
-    This may be done by including near the beginning
-    of each file the following in a comment:
-    <a href="https://spdx.org/using-spdx#identifiers">"SPDX-License-Identifier: [SPDX license expression]"</a>
-    (see
-    <a href="https://github.com/david-a-wheeler/spdx-tutorial">this tutorial</a>
-    for more information).
+    This MAY be done by including the following inside a comment
+    near the beginning of each file:
+    <a href="https://spdx.org/using-spdx#identifiers"><tt>SPDX-License-Identifier: [SPDX license expression for project]</tt></a>.
     <sup>[<a href="#license_per_file">license_per_file</a>]</sup>
 
-    *Details*: The project could also include, as a license statement, a stable URL
-    pointing to the license text, or could include the full license text.
+    *Details*:
+    This MAY also be done by including a statement in natural language
+    identifying the license.
+    The project MAY also include a stable URL
+    pointing to the license text, or the full license text.
     Note that the criterion license_location requires the
     project license be in a standard location.
+    See
+    <a href="https://github.com/david-a-wheeler/spdx-tutorial">this SPDX tutorial</a>
+    for more information about SPDX license expressions.
+    Note the relationship with
+    <a href="#copyright_per_file">copyright_per_file</a>, whose content
+    would typically precede the license information.
 
     *Rationale*: Files are sometimes individually copied from one
     project into another.  Per-file license information increases the
@@ -1315,6 +1454,25 @@ as described below.
     to review each others' work; it is better to require different
     organizations to review each others' work, but in many situations
     that is not practical.
+
+*   <a name="#code_review_standards"></a>
+    The project MUST document its code review requirements, including
+    how code review is conducted, what must be checked,
+    and what is required to be acceptable.
+    <sup>[<a href="#code_review_standards">code_review_standards</a>]</sup>
+
+    *Details*: See also
+    <a href="#two_person_review">two_person_review</a> and
+    <a href="#contribution_requirements">contribution_requirements</a>
+
+    *Rationale*: Code review is a cornerstone of quality and
+    secure coding practices. Projects often seek new contributors but lack
+    training and documentation to increase the number of reviewers. An
+    increase in code reviewers lowers maintainer workload while aiding
+    in meeting the badge requirement two_person_review.
+    See
+    https://github.com/linuxfoundation/cii-best-practices-badge/issues/699
+    from GeorgLink.
 
 *   <a name="build_reproducible"></a>
     (Future criterion) The project MUST have a
@@ -1485,26 +1643,6 @@ Review these larger criteria sets for things to add:
     "app stores" makes this kind of requirement untenable in
     many circumstances.  So we don't plan to add this.
     Maybe the EFF can help?!?
-
-*   Copyright notice in each file, e.g.,
-    "Copyright [year project started] - [current year], [project founder]
-    and the [project name] contributors."
-    *Rationale*: This isn't legally required.
-    On the other hand, this is not hard to add.
-    In addition,
-    <a href="http://ben.balter.com/2015/06/03/copyright-notices-for-websites-and-open-source-projects/">Ben Balter's "Copyright notices for open source projects"</a>
-    provides a good argument for why it *should*   be included:
-    "First, someone may want to use your work in ways not allowed
-    by your license; notices help them determine who to ask for
-    permission. Explicit notices can help you prove that you and your
-    collaborators really are the copyright holders. They can serve to put
-    a potential infringer on notice by providing an informal sniff test to
-    counter the “Oh yeah, well I didn’t know it was copyrighted”
-    defense. For some users the copyright notice may suggest higher
-    quality, as they expect that good software will include a notice...
-    Git can track these things, but people may receive software outside
-    of git or where the git history has not been retained."
-    The question is, is this really that important?
 
 ### Probably not: Security Code review ideas from liujin28
 

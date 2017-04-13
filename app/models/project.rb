@@ -55,7 +55,25 @@ class Project < ActiveRecord::Base
 
   scope :recently_updated, (
     lambda do
-      unscoped.limit(50).order(updated_at: :desc, id: :asc).eager_load(:user)
+      # The "includes" here isn't ideal.
+      # Originally we used "eager_load" on :user, but
+      # "eager_load" forces a load of *all* fields per a bug in Rails:
+      # https://github.com/rails/rails/issues/15185
+      # Switching to ".includes" fixes the bug, though it means we do 2
+      # database queries instead of just one.
+      # We could use the gem "rails_select_on_includes" to fix this bug:
+      # https://github.com/alekseyl/rails_select_on_includes
+      # but that's something of a hack.
+      # If a totally-cached feed is used, then the development environment
+      # will complain as follows:
+      # GET /feed
+      # AVOID eager loading detected
+      #   Project => [:user]
+      #   Remove from your finder: :includes => [:user]
+      # However, you *cannot* simply remove the includes, because
+      # when the feed is *not* completely cached, the code *does* need
+      # this user data.
+      limit(50).reorder(updated_at: :desc, id: :asc).includes(:user)
     end
   )
 
@@ -154,8 +172,9 @@ class Project < ActiveRecord::Base
               text: true
   end
 
+  # Return string representing badge level; assumes badge_percentage correct.
   def badge_level
-    return 'passing' if all_active_criteria_passing?
+    return 'passing' if badge_percentage >= 100
     'in_progress'
   end
 
@@ -180,6 +199,46 @@ class Project < ActiveRecord::Base
     text =~ %r{https?://[^ ]{5}}
   end
 
+  # Returns a symbol indicating a the status of an particular criterion
+  # in a project.  These are:
+  # :criterion_passing -
+  #   'Met' (or 'N/A' if applicable) has been selected for the criterion
+  #   and all requred justification text (including url's) have been entered  #
+  # :criterion_failing -
+  #   'Unmet' has been selected for a MUST criterion'.
+  # :criterion_barely -
+  #   'Unmet' has been selected for a SHOULD or SUGGESTED criterion and
+  #   ,if SHOULD, required justification text has been entered.
+  # :criterion_url_required -
+  #   'Met' has been selected, but a required url in the justification
+  #   text is missing.
+  # :criterion_justification_required -
+  #   Required justification for 'Met', 'N/A' or 'Unmet' selection is missing.
+  # :criterion_unknown -
+  #   The criterion has been left at it's default value and thus the status
+  #   is unknown.
+  def get_criterion_status(criterion)
+    status = self[criterion.name.status]
+    return get_passing_staus(status) if passing?(criterion)
+    return :criterion_justification_required if status.na?
+    return get_met_status(criterion) if status.met?
+    return get_unmet_status(criterion) if status.unmet?
+    :criterion_unknown
+  end
+
+  # Send owner an email they add a new project.
+  def send_new_project_email
+    ReportMailer.email_new_project_owner(self).deliver_now
+  end
+
+  # Return true if we should show an explicit license for the data.
+  # Old entries did not set a license; we only want to show entry licenses
+  # if the updated_at field indicates there was agreement to it.
+  ENTRY_LICENSE_EXPLICIT_DATE = DateTime.iso8601('2017-02-20T12:00Z')
+  def show_entry_license?
+    updated_at >= ENTRY_LICENSE_EXPLICIT_DATE
+  end
+
   # Update the badge percentage, and update relevant event datetime if needed.
   # This code will need to changed if there are multiple badge levels, or
   # if there are more than 100 criteria. (If > 100 criteria, switch
@@ -192,6 +251,11 @@ class Project < ActiveRecord::Base
     elsif badge_percentage < 100 && old_badge_percentage == 100
       self.lost_passing_at = Time.now.utc
     end
+  end
+
+  # Return owning user's name for purposes of display.
+  def user_display_name
+    user_name || user_nickname
   end
 
   # Update badge percentages for all project entries, and send emails
@@ -283,28 +347,52 @@ class Project < ActiveRecord::Base
   end
   # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
-  # Return owning user's name for purposes of display.
-  def user_display_name
-    user_name || user_nickname
-  end
-
-  # Send owner an email they add a new project.
-  def send_new_project_email
-    ReportMailer.email_new_project_owner(self).deliver_now
-  end
-
-  # Return true if we should show an explicit license for the data.
-  # Old entries did not set a license; we only want to show entry licenses
-  # if the updated_at field indicates there was agreement to it.
-  ENTRY_LICENSE_EXPLICIT_DATE = DateTime.iso8601('2017-02-20T12:00Z')
-  def show_entry_license?
-    updated_at >= ENTRY_LICENSE_EXPLICIT_DATE
+  def self.recently_reminded
+    Project
+      .select('projects.*, users.email as user_email')
+      .joins(:user).references(:user) # Need this to check email address
+      .where('last_reminder_at IS NOT NULL')
+      .where('last_reminder_at >= ?', 14.days.ago)
+      .reorder('last_reminder_at')
   end
 
   private
 
-  def all_active_criteria_passing?
-    Criteria.active.all? { |criterion| passing? criterion }
+  # def all_active_criteria_passing?
+  #   Criteria.active.all? { |criterion| passing? criterion }
+  # end
+
+  def get_met_status(criterion)
+    return :criterion_justification_required if
+      criterion.met_justification_required?
+    :criterion_url_required
+  end
+
+  def get_passing_staus(status)
+    return :criterion_passing if status.met? || status.na?
+    :criterion_barely
+  end
+
+  def get_unmet_status(criterion)
+    return :criterion_justification_required if criterion.should?
+    :criterion_failing
+  end
+
+  def justification_good?(justification)
+    return false if justification.nil?
+    justification.length >= MIN_SHOULD_LENGTH
+  end
+
+  def met_satisfied?(criterion, status, justification)
+    return true if status.met? && !criterion.met_url_required? &&
+                   (!criterion.met_justification_required? ||
+                    justification_good?(justification))
+    status.met? && contains_url?(justification)
+  end
+
+  def na_satisfied?(criterion, status, justification)
+    status.na? && (!criterion.na_justification_required? ||
+                   justification_good?(justification))
   end
 
   def need_a_base_url
@@ -322,29 +410,12 @@ class Project < ActiveRecord::Base
       suggested_satisfied?(criterion, status)
   end
 
-  def na_satisfied?(criterion, status, justification)
-    status.na? && (!criterion.na_justification_required? ||
-                   justification_good?(justification))
-  end
-
-  def met_satisfied?(criterion, status, justification)
-    return true if status.met? && !criterion.met_url_required? &&
-                   (!criterion.met_justification_required? ||
-                    justification_good?(justification))
-    status.met? && contains_url?(justification)
-  end
-
   def should_satisfied?(criterion, status, justification)
     criterion.should? && status.unmet? && justification_good?(justification)
   end
 
   def suggested_satisfied?(criterion, status)
     criterion.suggested? && !status.unknown?
-  end
-
-  def justification_good?(justification)
-    return false if justification.nil?
-    justification.length >= MIN_SHOULD_LENGTH
   end
 
   def to_percentage(portion, total)

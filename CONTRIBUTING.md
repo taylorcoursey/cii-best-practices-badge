@@ -350,6 +350,34 @@ the software works fine.  There may more than one cause of this.
 For now, if tests fail, restart to see if it's a problem with the software
 or the tests.  On CircleCI you can choose to rebuild.
 
+### Security, privacy, and performance
+
+Pay attention to security, and work *with* (not against) our
+security hardening mechanisms.  In particular, put JavaScript and CSS
+in *separate* files - this makes it possible to have very strong
+Content Security Policy (CSP) rules, which in turn greatly reduces
+the impact of a software defect.  Be sure to use prepared statements
+(including via Rails' ActiveRecord).
+Protect private information, in particular passwords and email addresses.
+Avoid mechanisms that could be used for tracking where possible
+(we do need to verify people are logged in for some operations),
+and ensure that third parties can't use interactions for tracking.
+For more about security, see [security](doc/security.md).
+
+We want the software to have decent performance for typical users.
+[Our goal is interaction in 1 second or less after making a request](https://developers.google.com/web/fundamentals/performance/rail).
+Don't send megabytes of data for a request
+(see
+[The Website Obesity Crisis](http://idlewords.com/talks/website_obesity.htm)).
+Use caching (at the server, CDN, and user side) to improve performance
+in typical cases (while avoiding making the code too complicated).
+Moving all the JavaScripts to a long-lived cached page, for example,
+means that the user only needs to load that page once.
+See the "other tools" list below for some tools to help measure performance.
+There's always a trade-off between various attributes, in particular,
+don't make performance so fast that the software is hard to maintain.
+Instead, work to get "reasonable" performance in typical cases.
+
 ## How to check proposed changes before submitting them
 
 Before submitting changes, you *must*
@@ -366,31 +394,33 @@ The specific list of tools run by default using 'rake' is listed in
 Currently these include at least the following rake tasks that
 check the software:
 
-1. *bundle* - use bundle to check dependencies
-   ("bundle check || bundle install")
-2. *bundle_audit* - check for transitive gem dependencies with
-   known vulnerabilities
-3. *rubocop* - runs Rubocop, which checks Ruby code style against the
-   [community Ruby style guide](https://github.com/bbatsov/ruby-style-guide)
-4. *markdownlint* - runs markdownlint, also known as mdl
-   (this checks for errors in the markdown text)
-5. *rails_best_practices* - check Ruby against rails best practices
-   using the gem
-   [rails_best_practices](http://rails-bestpractices.com/)
-6. *brakeman* - runs Brakeman, which is a static source code analyzer
-   to look for Ruby on Rails security vulnerabilities
-7. *license_okay* - runs license_finder to check the
-   OSS licenses of gem dependencies (transitively).
-   A separate dependency on file 'license_finder_report.html' generates
-   a detailed license report in HTML format.
-8. *whitespace_check* - runs "git diff --check" to detect
-   trailing whitespace in latest diff
-9. *yaml_syntax_check* - checks syntax of YAML (.yml) files.
-   Note that the automated test suite includes a number of specific
-   checks on the criteria.yml file.
-10. *fasterer* - report on Ruby constructs with poor performance (temporarily disabled until it supports Ruby 2.4)
-11. *eslint* - Perform code style check on JavaScript using eslint
-12. *test* - run the automated test suite
+*   *bundle* - use bundle to check dependencies
+    ("bundle check || bundle install")
+*   *bundle_doctor* - sanity check on Ruby gem configuration/installation
+*   *bundle_audit* - check for transitive gem dependencies with
+    known vulnerabilities
+*   *rubocop* - runs Rubocop, which checks Ruby code style against the
+    [community Ruby style guide](https://github.com/bbatsov/ruby-style-guide)
+*   *markdownlint* - runs markdownlint, also known as mdl
+    (this checks for errors in the markdown text)
+*   *rails_best_practices* - check Ruby against rails best practices
+    using the gem
+    [rails_best_practices](http://rails-bestpractices.com/)
+*   *brakeman* - runs Brakeman, which is a static source code analyzer
+    to look for Ruby on Rails security vulnerabilities
+*   *license_okay* - runs license_finder to check the
+    OSS licenses of gem dependencies (transitively).
+    A separate dependency on file 'license_finder_report.html' generates
+    a detailed license report in HTML format.
+*   *whitespace_check* - runs "git diff --check" to detect
+    trailing whitespace in latest diff
+    *yaml_syntax_check* - checks syntax of YAML (.yml) files.
+    Note that the automated test suite includes a number of specific
+    checks on the criteria.yml file.
+*   *fasterer* - report on Ruby constructs with poor performance
+    (temporarily disabled until it supports Ruby 2.4)
+*   *eslint* - Perform code style check on JavaScript using eslint
+*   *test* - run the automated test suite
 
 Running "rake test" (the automated test suite) will show
 "Run options: --seed ...", "# Running:", and a series of dots (passing tests).
@@ -422,8 +452,9 @@ problem is in the software under test, and not in our test framework).
 
 ### Other tools
 
-Here are some other tools we use, though they are not currently integrated into
-the default "rake" checking task:
+Here are some other tools we use for checking quality or security,
+though they are not currently integrated
+into the default "rake" checking task:
 
 * OWASP ZAP web application security scanner.
   You are encouraged to use this and other web application scanners to find and
@@ -432,6 +463,21 @@ the default "rake" checking task:
 * JSHint (JavaScript error detector)
 * W3C link checker <https://validator.w3.org/checklink>
 * W3C markup validation service <https://validator.w3.org/>
+
+Here are some online tools we sometimes use to check for performance issues
+(including time to complete rendering, download size in bytes, etc.):
+
+* [WebPageTest](https://www.webpagetest.org/)
+* [Varvy PageSpeed](https://varvy.com/pagespeed/)
+* [Yellow lab tools](http://yellowlab.tools/) - Examines performance.
+  It can notice issues like excessive accesses of the DOM from JavaScript.
+  It's OSS; see
+  ([YellowLabTools on GitHub](https://github.com/gmetais/YellowLabTools))
+* [Pingdom](https://tools.pingdom.com/)
+
+This
+[article on Rails front end performance](https://www.viget.com/articles/rails-front-end-performance)
+may be of use to you if you're interested in performance.
 
 We sometimes run this to check if assets compile properly (see
 [heroku_rails_deflate](https://github.com/mattolson/heroku_rails_deflate)):
@@ -447,6 +493,21 @@ Note that we also use
 for continuous integration tools to check changes
 after they are checked into GitHub; if they find problems, please fix them.
 These run essentially the same set of checks as the default rake task.
+
+## Git commit messages
+
+When writing git commit messages, try to follow the guidelines in
+[How to Write a Git Commit Message](https://chris.beams.io/posts/git-commit/):
+
+1.  Separate subject from body with a blank line
+2.  Limit the subject line to 50 characters.
+    (We're flexible on this, but *do* limit it to 72 characters or less.)
+3.  Capitalize the subject line
+4.  Do not end the subject line with a period
+5.  Use the imperative mood in the subject line (*command* form)
+6.  Wrap the body at 72 characters ("<tt>fmt -w 72</tt>")
+7.  Use the body to explain what and why vs. how
+    (git tracks how it was changed in detail, don't repeat that)
 
 ## Reuse (supply chain)
 
